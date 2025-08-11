@@ -1,0 +1,56 @@
+# ======================
+# EOL padrão
+# ======================
+* text=auto eol=lf
+
+# Scripts Unix/Mac
+*.sh text eol=lf
+/mvnw text eol=lf
+
+# Scripts Windows
+*.cmd text eol=crlf
+*.bat text eol=crlf
+/mvnw.cmd text eol=crlf
+
+# ======================
+# Arquivos binários (sem diff)
+# ======================
+*.jar binary
+*.war binary
+*.ear binary
+*.zip binary
+*.tar binary
+*.tar.gz binary
+*.tgz binary
+*.gz binary
+*.7z binary
+
+# Imagens
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.svg binary
+
+# Fontes
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# iOS e Android builds
+*.ipa binary
+*.apk binary
+*.aab binary
+*.keystore binary
+
+# ======================
+# Xcode (iOS)
+# ======================
+*.pbxuser text eol=lf
+*.mode1v3 text eol=lf
+*.mode2v3 text eol=lf
+*.perspectivev3 text eol=lf
+*.xcuserstate binary
