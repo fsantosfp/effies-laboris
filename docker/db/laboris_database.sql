@@ -1,8 +1,3 @@
--- Usamos ENUM para garantir a integridade dos dados em campos com valores fixos
-CREATE TYPE user_role AS ENUM ('SAAS_OWNER', 'MANAGER', 'EMPLOYEE');
-CREATE TYPE job_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
-CREATE TYPE time_entry_type AS ENUM ('CLOCK_IN', 'START_BREAK', 'END_BREAK', 'CLOCK_OUT');
-
 -- Tabela para os clientes do SaaS
 CREATE TABLE companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -19,10 +14,12 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role user_role NOT NULL,
+    role VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+TABLE users ADD CONSTRAINT check_user_role CHECK (role IN ('SAAS_OWNER', 'MANAGER', 'EMPLOYEE'));
 
 -- Tabela para o histórico de salários, permitindo aumentos com data de vigência
 CREATE TABLE salary_history (
@@ -46,12 +43,14 @@ CREATE TABLE jobs (
     client_name VARCHAR(255), -- Nome do contratante do serviço
     budget NUMERIC(10, 2),
     billing_rate NUMERIC(10, 2) NOT NULL, -- Valor/hora de venda
-    status job_status NOT NULL DEFAULT 'PENDING',
+    status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
     start_date DATE,
     end_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+TABLE jobs ADD CONSTRAINT check_job_status CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED'));
 
 -- Tabela de ligação (muitos-para-muitos) entre funcionários e trabalhos
 CREATE TABLE job_assignments (
@@ -66,9 +65,15 @@ CREATE TABLE time_entries (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     entry_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    entry_type time_entry_type NOT NULL,
+    entry_type VARCHAR(255) NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     is_manual BOOLEAN NOT NULL DEFAULT FALSE,
     justification TEXT -- Justificativa para entradas manuais
 );
+
+TABLE time_entries ADD CONSTRAINT check_time_entry_type CHECK (entry_type IN ('CLOCK_IN', 'START_BREAK', 'END_BREAK', 'CLOCK_OUT'));
+
+INSERT INTO users (name, email, password_hash, "role")
+VALUES ('Admin SaaS', 'admin@laboris.com', '$2a$10$p8s27fACTFqP4fz3iD0z0.c8zHyCxEEEN/BuLNGzKAUgtNXs0SqcS', 'SAAS_OWNER')
+ON CONFLICT (email) DO NOTHING;

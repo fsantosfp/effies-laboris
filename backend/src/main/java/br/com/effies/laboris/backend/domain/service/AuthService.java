@@ -2,7 +2,7 @@ package br.com.effies.laboris.backend.domain.service;
 
 
 import br.com.effies.laboris.backend.domain.entity.User;
-import br.com.effies.laboris.backend.presentation.dto.LoginRequestDto;
+import br.com.effies.laboris.backend.presentation.dto.request.LoginRequestDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -1,4 +1,4 @@
-package br.com.effies.laboris.backend.presentation.dto;
+package br.com.effies.laboris.backend.presentation.dto.request;
 
 import lombok.Data;
 
