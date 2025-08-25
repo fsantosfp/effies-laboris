@@ -1,5 +1,6 @@
 package br.com.effies.laboris.backend.domain.entity;
 
+import br.com.effies.laboris.backend.domain.entity.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,11 +27,6 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // TODO: Acidcionar o relacionamento com a entidade Company
-    // @ManyToOne
-    // @JoinColumn(name = "company_id")
-    // private Company company
-
     @Column(nullable = false)
     private String name;
 
@@ -41,7 +37,7 @@ public class User implements UserDetails {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name= "role", nullable = false)
     private UserRole role;
 
     @CreationTimestamp
@@ -86,4 +82,8 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 }
