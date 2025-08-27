@@ -1,6 +1,7 @@
 package br.com.effies.laboris.backend.domain.entity;
 
 import br.com.effies.laboris.backend.domain.entity.enums.UserRole;
+import br.com.effies.laboris.backend.domain.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,6 +40,10 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name= "role", nullable = false)
     private UserRole role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at")
