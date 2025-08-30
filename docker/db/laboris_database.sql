@@ -19,8 +19,7 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT check_user_role CHECK (role IN ('SAAS_OWNER', 'MANAGER', 'EMPLOYEE')),
-    CONSTRAINT check_user_status CHECK ( status IN ('ACTIVE', 'INACTIVE'));
-    ;
+    CONSTRAINT check_user_status CHECK ( status IN ('ACTIVE', 'INACTIVE'))
 );
 
 -- Tabela para o histórico de salários, permitindo aumentos com data de vigência
@@ -40,14 +39,14 @@ CREATE TABLE jobs (
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     client_name VARCHAR(255), -- Nome do contratante do serviço
-    budget NUMERIC(10, 2),
-    billing_rate NUMERIC(10, 2) NOT NULL, -- Valor/hora de venda
+    budget NUMERIC(10, 2) NOT NULL,
+    billing_rate NUMERIC(10, 2), -- Valor/hora de venda
     status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
     start_date DATE,
     end_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT check_job_status CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED'));
+    CONSTRAINT check_job_status CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELED', 'DELETED'))
 );
 
 -- Tabela de ligação (muitos-para-muitos) entre funcionários e trabalhos
@@ -68,7 +67,7 @@ CREATE TABLE time_entries (
     longitude DOUBLE PRECISION NOT NULL,
     is_manual BOOLEAN NOT NULL DEFAULT FALSE,
     justification TEXT, -- Justificativa para entradas manuais
-    CONSTRAINT check_time_entry_type CHECK (entry_type IN ('CLOCK_IN', 'START_BREAK', 'END_BREAK', 'CLOCK_OUT'));
+    CONSTRAINT check_time_entry_type CHECK (entry_type IN ('CLOCK_IN', 'START_BREAK', 'END_BREAK', 'CLOCK_OUT'))
 );
 
 -- Criando um índice para otimizar a busca por salário em uma data específica, analisar primeiro o desempenho
