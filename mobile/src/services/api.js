@@ -1,9 +1,14 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import Config from 'react-native-config';
+
+const API_BASE_URL = Config.API_URL || 'http://localhost:8080/api/v1';
+
+console.log('[API] Conectando em:', API_BASE_URL);
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
+    baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use(async (config) => {
