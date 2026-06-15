@@ -1,0 +1,55 @@
+version: '3.8'
+
+# ============================================================
+# Ambiente: DESENVOLVIMENTO LOCAL
+# Uso: docker compose -f infra/dev/docker-compose.yml up -d
+# O frontend roda separado via: npm run dev (na pasta /frontend)
+# ============================================================
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: laboris-postgres-dev
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-admin}
+      - POSTGRES_DB=${DB_NAME:-laboris_db}
+    volumes:
+      - laboris-data-dev:/var/lib/postgresql/data
+      - ../../docker/db:/docker-entrypoint-initdb.d
+    networks:
+      - laboris-dev-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../../backend
+    container_name: laboris-backend-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - TOKEN_SECRET=${TOKEN_SECRET:-dev_secret_token_change_in_local_env}
+      - GOOGLE_MAPS_KEY=${GOOGLE_MAPS_KEY:-}
+      - RESEND_KEY=${RESEND_KEY:-}
+      - DB_USERNAME=${DB_USERNAME:-admin}
+      - DB_PASSWORD=${DB_PASSWORD:-admin}
+      - DB_NAME=${DB_NAME:-laboris_db}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/${DB_NAME:-laboris_db}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-admin}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-admin}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - laboris-dev-net
+    restart: unless-stopped
+
+volumes:
+  laboris-data-dev:
+
+networks:
+  laboris-dev-net:
+    driver: bridge
