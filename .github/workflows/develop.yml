@@ -1,13 +1,17 @@
-name: Create Pull Request to Develop
+name: CI — Auto PR + Deploy Homologação
 
 on:
   push:
-    branches-ignore:
-      - 'main'
-      - 'develop'
+    branches:
+      - '**'
 
 jobs:
+  # ─────────────────────────────────────────
+  # JOB 1: Abre PR automático para develop
+  # Disparado em qualquer push fora de main/develop
+  # ─────────────────────────────────────────
   create-pull-request:
+    if: github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,3 +25,53 @@ jobs:
           pr_title: "PR from ${{ github.ref_name }}"
           pr_body: "Automatic Pull Request from ${{ github.ref_name }} to `develop`."
           pr_label: "automation"
+
+  # ─────────────────────────────────────────
+  # JOB 2: Deploy automático em Homologação
+  # Disparado apenas em push/merge para develop
+  # ─────────────────────────────────────────
+  deploy-hom:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: homologacao
+    steps:
+      - name: Deploy via SSH para Homologação
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/effies-laboris
+
+            echo "🔄 Atualizando repositório..."
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+
+            echo "📝 Criando infra/hom/.env com secrets..."
+            cat > infra/hom/.env << 'ENVEOF'
+            DB_USERNAME=${{ secrets.HOM_DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.HOM_DB_PASSWORD }}
+            DB_NAME=laboris_hom_db
+            TOKEN_SECRET=${{ secrets.HOM_TOKEN_SECRET }}
+            GOOGLE_MAPS_KEY=${{ secrets.HOM_GOOGLE_MAPS_KEY }}
+            RESEND_KEY=${{ secrets.HOM_RESEND_KEY }}
+            VITE_API_URL=${{ secrets.HOM_API_URL }}
+            VITE_GOOGLE_MAPS_API_KEY=${{ secrets.HOM_GOOGLE_MAPS_VITE_KEY }}
+            ENVEOF
+
+            echo "🚀 Subindo containers de homologação..."
+            docker compose \
+              -p laboris-hom \
+              -f infra/hom/docker-compose.yml \
+              --env-file infra/hom/.env \
+              up -d --build --remove-orphans
+
+            echo "🧹 Limpando imagens antigas..."
+            docker image prune -f
+
+            echo "✅ Deploy de homologação concluído!"
+            echo "   Frontend: http://$(curl -s ifconfig.me):3001"
+            echo "   Backend:  http://$(curl -s ifconfig.me):8081"

@@ -1,0 +1,52 @@
+name: Deploy — Produção
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy via SSH para Produção
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/effies-laboris
+
+            echo "🔄 Atualizando repositório..."
+            git fetch origin
+            git checkout main
+            git pull origin main
+
+            echo "📝 Criando infra/prod/.env com secrets..."
+            cat > infra/prod/.env << 'ENVEOF'
+            DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            DB_NAME=laboris_prod_db
+            TOKEN_SECRET=${{ secrets.PROD_TOKEN_SECRET }}
+            GOOGLE_MAPS_KEY=${{ secrets.PROD_GOOGLE_MAPS_KEY }}
+            RESEND_KEY=${{ secrets.PROD_RESEND_KEY }}
+            VITE_API_URL=${{ secrets.PROD_API_URL }}
+            VITE_GOOGLE_MAPS_API_KEY=${{ secrets.PROD_GOOGLE_MAPS_VITE_KEY }}
+            ENVEOF
+
+            echo "🚀 Subindo containers de produção..."
+            docker compose \
+              -p laboris-prod \
+              -f infra/prod/docker-compose.yml \
+              --env-file infra/prod/.env \
+              up -d --build --remove-orphans
+
+            echo "🧹 Limpando imagens antigas..."
+            docker image prune -f
+
+            echo "✅ Deploy de produção concluído!"
+            echo "   Frontend: http://$(curl -s ifconfig.me):3000"
+            echo "   Backend:  http://$(curl -s ifconfig.me):8080"

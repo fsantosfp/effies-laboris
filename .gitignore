@@ -39,9 +39,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Arquivos de ambiente
+# Arquivos de ambiente (com valores reais — NUNCA commitar)
 **/.env
 **/.env.*
+!**/.env.*.example
 
 # ======================
 # ANDROID (React Native)
