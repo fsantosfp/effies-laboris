@@ -43,7 +43,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd ~/opt/efeps-laboris/app-code
+            cd /opt/efeps-laboris/app-code
 
             echo "🔄 Atualizando repositório..."
             git fetch origin
