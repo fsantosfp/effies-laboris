@@ -48,10 +48,26 @@ const MainScreen = () => {
                     setActiveDisplacement(activeDisplacementRes.data);
                     console.log(`[Developer Log] Trabalhos designados:`, assignmentsRes.data);
 
+                    // Raio de geofencing: 50 metros (≈ 164 pés)
+                    const GEOFENCE_RADIUS_METERS = 50;
+
+                    // Fórmula de Haversine — distância real em metros entre dois pontos GPS
+                    const haversineDistance = (lat1, lon1, lat2, lon2) => {
+                        const R = 6_371_000; // raio médio da Terra em metros
+                        const toRad = deg => deg * (Math.PI / 180);
+                        const dLat = toRad(lat2 - lat1);
+                        const dLon = toRad(lon2 - lon1);
+                        const a =
+                            Math.sin(dLat / 2) ** 2 +
+                            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                            Math.sin(dLon / 2) ** 2;
+                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    };
+
                     const foundJob = assignmentsRes.data.find(job => {
-                        const latDiff = Math.abs(job.latitude - latitude);
-                        const lonDiff = Math.abs(job.longitude - longitude);
-                        return latDiff < 0.1 && lonDiff < 0.1;
+                        const distanceMeters = haversineDistance(latitude, longitude, job.latitude, job.longitude);
+                        console.log(`[Developer Log] Distância até "${job.address}": ${distanceMeters.toFixed(1)}m (limite: ${GEOFENCE_RADIUS_METERS}m)`);
+                        return distanceMeters <= GEOFENCE_RADIUS_METERS;
                     });
 
                     if (foundJob) {
