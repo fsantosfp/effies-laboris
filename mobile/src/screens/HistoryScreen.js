@@ -31,18 +31,42 @@ const HistoryScreen = () => {
 
         try {
 
-            const startISO = new Date(`${startDate}T00:00:00`).toLocaleString('en-US', { timeZone: 'America/New_York' });
-            // Build ET-aware day boundaries using Intl offset calculation
-            const buildETBoundary = (dateStr, hour, minute, second, ms) => {
-                // Parse in local time of the machine, then adjust to NY offset
-                const dt = new Date(`${dateStr}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:${String(second).padStart(2,'0')}.${String(ms).padStart(3,'0')}`);
-                const nyStr = dt.toLocaleString('en-US', { timeZone: 'America/New_York' });
-                const localStr = dt.toLocaleString('en-US');
-                const offsetMs = new Date(localStr) - new Date(nyStr);
-                return new Date(dt.getTime() + offsetMs).toISOString();
+            // Converte uma data (YYYY-MM-DD) + hora em NY para UTC ISO string.
+            // Usa formatToParts para evitar parsear strings de locale,
+            // que falham no engine Hermes do React Native (RangeError).
+            const buildETBoundary = (dateStr, endOfDay = false) => {
+                const [year, month, day] = dateStr.split('-').map(Number);
+
+                // Usa o meio-dia UTC como sonda para determinar o offset ET do dia
+                // (evita ambiguidades de horário de verão que ocorrem às 2h)
+                const probe = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+
+                const nyNoonHour = parseInt(
+                    new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'America/New_York',
+                        hour: '2-digit',
+                        hour12: false,
+                    }).formatToParts(probe).find(p => p.type === 'hour')?.value ?? '8',
+                    10
+                );
+
+                // ET está atrás do UTC: offset = 12 (meio-dia UTC) - hora NY correspondente
+                // Ex: EDT (verão) → 12 - 8 = 4 horas; EST (inverno) → 12 - 7 = 5 horas
+                const offsetMs = (12 - nyNoonHour) * 3_600_000;
+
+                const h  = endOfDay ? 23 : 0;
+                const m  = endOfDay ? 59 : 0;
+                const s  = endOfDay ? 59 : 0;
+                const ms = endOfDay ? 999 : 0;
+
+                // Constrói o alvo como UTC e aplica o offset para representar o horário NY
+                const targetUTC = new Date(Date.UTC(year, month - 1, day, h, m, s, ms));
+                return new Date(targetUTC.getTime() + offsetMs).toISOString();
             };
-            const startISOStr = buildETBoundary(startDate, 0, 0, 0, 0);
-            const endISOStr = buildETBoundary(endDate, 23, 59, 59, 999);
+
+            const startISOStr = buildETBoundary(startDate, false);
+            const endISOStr   = buildETBoundary(endDate, true);
+
 
             const [entriesRes, displacementsRes] = await Promise.all([
                 api.get(`/time-entries/me?start=${startISOStr}&end=${endISOStr}`),
